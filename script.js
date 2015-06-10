@@ -92,7 +92,8 @@ function onLoad() {
         background.z_level = 0;
 
         s.add(background);
-
+        
+        var y = 350; boxes[0].onArrive = function() {if (y == 350) y = 550; else y = 350; boxes[0].goTo({x: 150, y: y}, 1)}; boxes[0].onArrive();
     }, 2400, 600);
 
     ngn.start();
