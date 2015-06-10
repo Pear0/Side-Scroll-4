@@ -308,7 +308,7 @@ function Entity() {
     this.lastPos = {
         x: 0,
         y: 0
-    }
+    };
     this.pos = {
         x: 0,
         y: 0
@@ -432,84 +432,92 @@ function Entity() {
             var didCollide = false;
             var norm = NGNu.normalize(self.velocity);
 
+            var currentCollide = collides();
+
+            e.ngn.log("CurrentlyColliding", currentCollide);
+
             //Check if currently colliding
-            if (collides()) {
+            if (currentCollide) {
                 //Try to fix it
-                if (this.velocity.x !== 0 || this.velocity.y !== 0) {
-                    var directions = [];
-                    for (var i = 0; i < 360; i += 45) {
-                        var r = i * (Math.PI / 180);
-                        directions.push({
-                            x: Math.cos(r),
-                            y: Math.sin(r)
-                        });
+
+
+                var directions = [];
+                for (var o = 0; o < 360; o += 45) {
+                    var r = o * (Math.PI / 180);
+                    directions.push({
+                        x: Math.cos(r),
+                        y: Math.sin(r)
+                    });
+                }
+
+                for (var m = 1; collides(); m++) {
+
+                    if (m > 100) {
+                        break;
                     }
 
-                    for (var i = 1; collides(); i++) {
-
-                        for (var d = 0; d < directions.length; d++) {
-                            this.pos.x += directions[d].x * i;
-                            this.pos.y += directions[d].y * i;
-                            if (collides()) {
-                                this.pos.x -= directions[d].x * i;
-                                this.pos.y -= directions[d].y * i;
-                            } else {
-                                break;
-                            }
+                    for (var d = 0; d < directions.length; d++) {
+                        this.pos.x += directions[d].x * m;
+                        this.pos.y += directions[d].y * m;
+                        if (collides()) {
+                            this.pos.x -= directions[d].x * m;
+                            this.pos.y -= directions[d].y * m;
+                        } else {
+                            break;
                         }
-
                     }
 
-
                 }
             }
+            if (self.velocity.x !== 0 || self.velocity.y !== 0) {
+                var collidesX = false;
+                var collidesY = false;
 
-            //Check if going to collide
-            var collidesX = false;
-            var collidesY = false;
-
-            self.pos.x += self.velocity.x;
-            if (collides()) {
-                collidesX = true;
-            }
-            self.pos.x -= self.velocity.x;
-
-            self.pos.y += self.velocity.y;
-            if (collides()) {
-                collidesY = true;
-            }
-            self.pos.y -= self.velocity.y;
-
-            if (collidesX === collidesY) {
                 self.pos.x += self.velocity.x;
-                self.pos.y += self.velocity.y;
-                while (collides()) {
-                    self.pos.x -= norm.x;
-                    self.pos.y -= norm.y;
-                    this.onWall = true;
-                    this.onGround = self.velocity.y > 0;
-                    this.velocity.x = 0;
-                    this.velocity.y = 0;
-                    didCollide = true;
+                if (collides()) {
+                    collidesX = true;
                 }
-            } else if (collidesX) {
-                self.pos.x += self.velocity.x;
-                while (collides()) {
-                    self.pos.x -= norm.x;
-                    this.onWall = true;
-                    this.velocity.x = 0;
-                    didCollide = true;
-                }
+                self.pos.x -= self.velocity.x;
+
                 self.pos.y += self.velocity.y;
-            } else if (collidesY) {
-                self.pos.y += self.velocity.y;
-                while (collides()) {
-                    self.pos.y -= norm.y;
-                    this.onGround = self.velocity.y > 0;
-                    this.velocity.y = 0;
-                    didCollide = true;
+                if (collides()) {
+                    collidesY = true;
                 }
-                self.pos.x += self.velocity.x;
+                self.pos.y -= self.velocity.y;
+
+                e.ngn.log("CollidesXY", "[" + collidesX + ", " + collidesY + "]");
+
+                if (collidesX === collidesY) {
+                    self.pos.x += self.velocity.x;
+                    self.pos.y += self.velocity.y;
+                    while (collides()) {
+                        self.pos.x -= norm.x;
+                        self.pos.y -= norm.y;
+                        this.onWall = true;
+                        this.onGround = self.velocity.y > 0;
+                        this.velocity.x = 0;
+                        this.velocity.y = 0;
+                        didCollide = true;
+                    }
+                } else if (collidesX) {
+                    self.pos.x += self.velocity.x;
+                    while (collides()) {
+                        self.pos.x -= norm.x;
+                        this.onWall = true;
+                        this.velocity.x = 0;
+                        didCollide = true;
+                    }
+                    self.pos.y += self.velocity.y;
+                } else if (collidesY) {
+                    self.pos.y += self.velocity.y;
+                    while (collides()) {
+                        self.pos.y -= norm.y;
+                        this.onGround = self.velocity.y > 0;
+                        this.velocity.y = 0;
+                        didCollide = true;
+                    }
+                    self.pos.x += self.velocity.x;
+                }
             }
 
             this.lastPos = {

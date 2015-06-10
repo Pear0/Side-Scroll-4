@@ -55,7 +55,7 @@ function onLoad() {
 
         s.add(map);
 
-        var points = [[260, 300], [550, 490], [642, 410]];
+        var points = [[150, 300], [550, 490], [642, 410]];
 
         for (var i = 0; i < points.length; i++) {
             var box = new Entity();
@@ -68,13 +68,6 @@ function onLoad() {
         }
 
         var collectibles = [[420, 215], [745, 495]];
-        var collectibleFunc = function (e) {
-            boxes[0].goTo({
-                x: boxes[0].pos.x - 75,
-                y: boxes[0].pos.y
-            }, 1);
-            e.scene.objects.removeElement(e.thing);
-        };
         for (var j = 0; j < collectibles.length; j++) {
             var thing = new Entity();
             thing.image = "thing";
@@ -82,7 +75,14 @@ function onLoad() {
             thing.pos.y = collectibles[j][1];
             thing.z_level = 7;
             thing.collideable = false;
-            thing.onCollideWithProtagonist = collectibleFunc;
+            thing.index = j;
+            thing.onCollideWithProtagonist = function (e) {
+                boxes[e.thing.index + 1].goTo({
+                    x: boxes[e.thing.index + 1].pos.x,
+                    y: boxes[e.thing.index + 1].pos.y - 75
+                }, 1);
+                e.scene.objects.removeElement(e.thing);
+            };
             s.add(thing);
         }
 
@@ -92,8 +92,17 @@ function onLoad() {
         background.z_level = 0;
 
         s.add(background);
-        
-        var y = 350; boxes[0].onArrive = function() {if (y == 350) y = 550; else y = 350; boxes[0].goTo({x: 150, y: y}, 1)}; boxes[0].onArrive();
+
+        var y = 350;
+        boxes[0].onArrive = function () {
+            if (y == 350) y = 550;
+            else y = 350;
+            boxes[0].goTo({
+                x: 150,
+                y: y
+            }, 1);
+        };
+        boxes[0].onArrive();
     }, 2400, 600);
 
     ngn.start();
