@@ -305,6 +305,10 @@ function Entity() {
     this.onGround = false;
     this.onWall = false;
     this.onCollideWithProtagonist = undefined; // {ngn, scene, protagonist, thing}
+    this.lastPos = {
+        x: 0,
+        y: 0
+    }
     this.pos = {
         x: 0,
         y: 0
@@ -313,6 +317,9 @@ function Entity() {
         x: 0,
         y: 0
     };
+    this.hasFriction = true;
+    this.targetPos = undefined;
+    this.onArrive = undefined;
     var lastDirX = 1;
     var lastDirY = 1;
 
@@ -336,6 +343,26 @@ function Entity() {
         };
     };
 
+    this.goTo = function (pos, speed) {
+        if (pos === undefined)
+            return;
+        if (speed === undefined)
+            speed = 1;
+
+        this.targetPos = pos;
+        var path = {
+            x: this.targetPos.x - this.pos.x,
+            y: this.targetPos.y - this.pos.y
+        };
+        path = NGNu.normalize(path);
+        this.velocity = {
+            x: path.x * speed,
+            y: path.y * speed
+        };
+        this.hasFriction = false;
+
+    };
+
     this.render = function (e) { // e = {ngn, ctx, scene, width, height}
         e.ctx.translate(self.pos.x, self.pos.y);
 
@@ -344,11 +371,33 @@ function Entity() {
     };
 
     this.tick = function (e) { // e = {ngn, scene}
-        for (var i = 0; i < abilities.length; i++)
+        for (var i = 0; i < abilities.length; i++) {
             abilities[i]({
                 ngn: e.ngn,
                 entity: self
             });
+        }
+
+        if (this.targetPos !== undefined) {
+
+            if (Math.abs(this.velocity.x) + 1 >= Math.abs(this.targetPos.x - this.pos.x) && Math.abs(this.velocity.y) + 1 >= Math.abs(this.targetPos.y - this.pos.y)) {
+                this.pos = {
+                    x: this.targetPos.x,
+                    y: this.targetPos.y
+                };
+                this.velocity = {
+                    x: 0,
+                    y: 0
+                };
+
+                this.targetPos = undefined;
+                this.hasFriction = true;
+                if (this.onArrive !== undefined) {
+                    this.onArrive();
+                }
+            }
+
+        }
 
         if (self.doCollisions) {
             var insideViewBox = function () {
@@ -377,34 +426,103 @@ function Entity() {
                 return coll || !insideViewBox();
             };
 
-            var didCollide = false;
-            var norm = NGNu.normalize(self.velocity);
-
-            self.pos.x += self.velocity.x;
-            while (collides()) {
-                self.pos.x -= norm.x;
-                didCollide = true;
-            }
-
-            self.pos.y += self.velocity.y;
-            while (collides()) {
-                self.pos.y -= norm.y;
-                didCollide = true;
-            }
-
             this.onWall = false;
             this.onGround = false;
 
+            var didCollide = false;
+            var norm = NGNu.normalize(self.velocity);
+
+            //Check if currently colliding
+            if (collides()) {
+                //Try to fix it
+                if (this.velocity.x !== 0 || this.velocity.y !== 0) {
+                    var directions = [];
+                    for (var i = 0; i < 360; i += 45) {
+                        var r = i * (Math.PI / 180);
+                        directions.push({
+                            x: Math.cos(r),
+                            y: Math.sin(r)
+                        });
+                    }
+
+                    for (var i = 1; collides(); i++) {
+
+                        for (var d = 0; d < directions.length; d++) {
+                            this.pos.x += directions[d].x * i;
+                            this.pos.y += directions[d].y * i;
+                            if (collides()) {
+                                this.pos.x -= directions[d].x * i;
+                                this.pos.y -= directions[d].y * i;
+                            } else {
+                                break;
+                            }
+                        }
+
+                    }
+
+
+                }
+            }
+
+            //Check if going to collide
+            var collidesX = false;
+            var collidesY = false;
+
+            self.pos.x += self.velocity.x;
+            if (collides()) {
+                collidesX = true;
+            }
+            self.pos.x -= self.velocity.x;
+
+            self.pos.y += self.velocity.y;
+            if (collides()) {
+                collidesY = true;
+            }
+            self.pos.y -= self.velocity.y;
+
+            if (collidesX === collidesY) {
+                self.pos.x += self.velocity.x;
+                self.pos.y += self.velocity.y;
+                while (collides()) {
+                    self.pos.x -= norm.x;
+                    self.pos.y -= norm.y;
+                    this.onWall = true;
+                    this.onGround = self.velocity.y > 0;
+                    this.velocity.x = 0;
+                    this.velocity.y = 0;
+                    didCollide = true;
+                }
+            } else if (collidesX) {
+                self.pos.x += self.velocity.x;
+                while (collides()) {
+                    self.pos.x -= norm.x;
+                    this.onWall = true;
+                    this.velocity.x = 0;
+                    didCollide = true;
+                }
+                self.pos.y += self.velocity.y;
+            } else if (collidesY) {
+                self.pos.y += self.velocity.y;
+                while (collides()) {
+                    self.pos.y -= norm.y;
+                    this.onGround = self.velocity.y > 0;
+                    this.velocity.y = 0;
+                    didCollide = true;
+                }
+                self.pos.x += self.velocity.x;
+            }
+
+            this.lastPos = {
+                x: this.pos.x,
+                y: this.pos.y
+            };
+
             var sX = NGNu.sign(self.velocity.x);
-            var sY = NGNu.sign(self.velocity.y);
+
             if (sX === 0)
                 sX = lastDirX;
             else
                 lastDirX = sX;
-            if (sY === 0)
-                sY = lastDirY;
-            else
-                lastDirY = sY;
 
             self.pos.x += 1.5 * sX;
             if (collides()) {
@@ -413,12 +531,12 @@ function Entity() {
             }
             self.pos.x -= 1.5 * sX;
 
-            self.pos.y += 1.5 * sY;
+            self.pos.y += 1.5;
             if (collides()) {
-                this.onGround = lastDirY > 0;
+                this.onGround = true;
                 self.velocity.y = 0;
             }
-            self.pos.y -= 1.5 * sY;
+            self.pos.y -= 1.5;
 
             e.ngn.log("Pos", "[" + (+self.pos.x.toFixed(2)) + ", " + (+self.pos.y.toFixed(2)) + "]");
             e.ngn.log("Velocity", "[" + (+self.velocity.x.toFixed(2)) + ", " + (+self.velocity.y.toFixed(2)) + "]");
@@ -446,7 +564,7 @@ function Entity() {
             }
 
 
-        if (self.onGround || true)
+        if (this.hasFriction && (self.onGround || true))
             self.velocity.x *= 0.85;
 
         if (self.isProtagonist) {
@@ -481,9 +599,9 @@ function Scene(w, h) {
     this.add = function (obj) {
         this.objects.push(obj);
     };
-    this.remove = function(obj) {
+    this.remove = function (obj) {
         this.objects.removeElement(obj);
     };
-    
+
 
 }

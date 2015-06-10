@@ -8,6 +8,7 @@
 /* global Entity: false */
 
 var ngn, ch, map;
+var boxes = [];
 
 function onLoad() {
     console.log("Loading...");
@@ -58,6 +59,7 @@ function onLoad() {
 
         for (var i = 0; i < points.length; i++) {
             var box = new Entity();
+            boxes.push(box);
             box.image = "piece";
             box.pos.x = points[i][0];
             box.pos.y = points[i][1];
@@ -67,7 +69,10 @@ function onLoad() {
 
         var collectibles = [[420, 215], [745, 495]];
         var collectibleFunc = function (e) {
-            alert("HWILLIUM");
+            boxes[0].goTo({
+                x: boxes[0].pos.x - 75,
+                y: boxes[0].pos.y
+            }, 1);
             e.scene.objects.removeElement(e.thing);
         };
         for (var j = 0; j < collectibles.length; j++) {
