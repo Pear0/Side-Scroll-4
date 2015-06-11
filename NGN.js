@@ -76,7 +76,7 @@ NGNa.user_control = function (e) {
     if (keys[68])
         moveX += 1;
 
-    if (wallJumpTimeout > 14)
+    if (wallJumpTimeout > 23)
         moveX = tempMoveX;
 
     e.entity.velocity.x += 0.9 * moveX;
@@ -86,7 +86,7 @@ NGNa.user_control = function (e) {
         wallJumpTimeout = 10;
     } else if (keys[32] && e.entity.onWall && wallJumpTimeout < 0) {
         e.entity.velocity.y = -9;
-        e.entity.velocity.x += -7 * moveX;
+        e.entity.velocity.x += -4 * moveX;
         wallJumpTimeout = 30;
         tempMoveX = -moveX;
     }
@@ -317,6 +317,8 @@ function Entity() {
         x: 0,
         y: 0
     };
+    this._ = {};
+    this.onTick = function (e) {} //{ngn, scene, self}
     this.hasFriction = true;
     this.targetPos = undefined;
     this.onArrive = undefined;
@@ -553,6 +555,14 @@ function Entity() {
         } else {
             self.pos.x += self.velocity.x;
             self.pos.y += self.velocity.y;
+        }
+
+        if (this.onTick !== undefined) {
+            this.onTick({
+                ngn: e.ngn,
+                scene: e.scene,
+                self: self
+            });
         }
 
         //Check for collision with anything with protagonist collision handlers

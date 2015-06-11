@@ -67,7 +67,29 @@ function onLoad() {
             s.add(box);
         }
 
-        var collectibles = [[420, 215], [745, 495]];
+        for (var m = 0; m < 10; m++) {
+            var box = new Entity();
+            boxes.push(box);
+            box.image = "piece";
+            box.pos.x = 800 + 92 * m;
+            box.pos.y = 490 - 50 * m;
+            box.z_level = 2;
+            box._.hasRisen = false;
+            box.onTick = function (e) { // {ngn, scene, self}
+                if (ch.pos.x > e.self.pos.x && ch.pos.x + ch.getWidth(e.ngn) < e.self.pos.x + e.self.getWidth(e.ngn) && ch.onGround && !e.self._.hasRisen) {
+                    e.self.goTo({
+                        x: e.self.pos.x,
+                        y: e.self.pos.y - 50
+                    }, 1.5);
+                    e.self._.hasRisen = true;
+                }
+            }
+
+            s.add(box);
+        }
+
+
+        var collectibles = [[560, 380], [670, 300]];
         for (var j = 0; j < collectibles.length; j++) {
             var thing = new Entity();
             thing.image = "thing";
