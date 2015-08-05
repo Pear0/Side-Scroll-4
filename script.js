@@ -67,12 +67,12 @@ function onLoad() {
             s.add(box);
         }
 
-        for (var m = 0; m < 10; m++) {
+        for (var m = 0; m < 20; m++) {
             var box = new Entity();
             boxes.push(box);
             box.image = "piece";
             box.pos.x = 800 + 92 * m;
-            box.pos.y = 490 - 50 * m;
+            box.pos.y = 490 - 25 * m;
             box.z_level = 2;
             box._.hasRisen = false;
             box.onTick = function (e) { // {ngn, scene, self}
@@ -80,7 +80,7 @@ function onLoad() {
                     e.self.goTo({
                         x: e.self.pos.x,
                         y: e.self.pos.y - 50
-                    }, 1.5);
+                    }, 12);
                     e.self._.hasRisen = true;
                 }
             }
