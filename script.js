@@ -79,7 +79,7 @@ function onLoad() {
                 if (ch.pos.x > e.self.pos.x && ch.pos.x + ch.getWidth(e.ngn) < e.self.pos.x + e.self.getWidth(e.ngn) && ch.onGround && !e.self._.hasRisen) {
                     e.self.goTo({
                         x: e.self.pos.x,
-                        y: e.self.pos.y - 50
+                        y: e.self.pos.y - 25
                     }, 12);
                     e.self._.hasRisen = true;
                 }
